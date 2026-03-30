@@ -1,23 +1,81 @@
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from "react"; // Importamos useState
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import fishData from "../assets/data/data.json";
+import FiltroRegion from "../componentes/filtroRegion";
+import FishCard from "../componentes/fishCard";
+import FishModal from "../componentes/fishModal";
 
+export interface Especie {
+  Científico: string;
+  Común: string;
+  Estado: string;
+  Origen: string;
+  Regiones: string;
+  Habitad: string;
+  Carnada: string;
+  Fotos: string;
+  Descripcion: string;
+  Genero: string;
+}
 
-
-
-/*Espacio de coleccion de las especies
--Filtro para especie por region 
--Celda por especie donde:
-  -icono segun especie
-  -nombre comun
-  -estado conservacion
-  -origen
-
--Cada celda debe tener accion para que en un modal se muestre toda la informacion de dicha 
-especie, como tambien las imagenes que se tenga de aquella especie
-*/
 export default function AjustesScreen() {
+  const [listaEspecies, setListaEspecies] = useState<Especie[]>([]);
+  const [listaSeleccionada, setListaSeleccionada] = useState<string | null>(
+    null,
+  );
+  const [cargando, setCargando] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [seleccionado, setSeleccionado] = useState<Especie | null>(null);
+
+  const abrirDetalle = (especie: Especie) => {
+    setSeleccionado(especie);
+    setModalVisible(true);
+  };
+
+  // useEffect para inicializar la obtencion de datos
+  useEffect(() => {
+    setListaEspecies(fishData as unknown as Especie[]);
+    setCargando(false);
+  }, []);
+
+  const especiesFiltro = listaSeleccionada
+    ? listaEspecies.filter((especimen) =>
+        especimen.Regiones.includes(listaSeleccionada),
+      )
+    : listaEspecies;
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Ventana de colección</Text>
+
+      <FiltroRegion
+        seleccionada={listaSeleccionada}
+        alCambiar={setListaSeleccionada}
+      />
+      {cargando ? (
+        <ActivityIndicator size="large" color="#006064" />
+      ) : (
+        <FlatList
+          data={especiesFiltro}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={3}
+          renderItem={({ item }) => (
+            <FishCard especie={item} onPress={() => abrirDetalle(item)} />
+          )}
+          contentContainerStyle={{ alignItems: "center", paddingBottom: 20 }}
+          style={{ width: "100%" }}
+        />
+      )}
+      <FishModal
+        visible={modalVisible}
+        especie={seleccionado}
+        onClose={() => setModalVisible(false)}
+      />
     </View>
   );
 }
@@ -25,13 +83,14 @@ export default function AjustesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#e0f7fa', // Un fondo azul clarito
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#e0f7fa",
   },
   titulo: {
     fontSize: 20,
-    color: '#006064',
-    fontWeight: 'bold'
+    color: "#006064",
+    fontWeight: "bold",
+    marginBottom: 10,
   },
 });
