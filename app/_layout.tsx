@@ -1,23 +1,24 @@
-import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { HeaderTitle } from "@react-navigation/elements";
+import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function RootLayout() {
+  const insets = useSafeAreaInsets();
   const diseñoMenuGlobal = {
     headerShown: false,
     tabBarActiveTintColor: "#1e272e", // El color cuando está seleccionado
     tabBarInactiveTintColor: "#95a5a6",
-    tabBarActiveBackgroundColor: '#2ecc71',
-    tabBarInactiveBackgroundColor: 'transparent',
+    tabBarActiveBackgroundColor: "#2ecc71",
+    tabBarInactiveBackgroundColor: "transparent",
 
     // 1. EL CONTENEDOR PRINCIPAL
     tabBarStyle: {
       backgroundColor: "#1e272e",
       elevation: 10,
-      height: 70,
-      paddingBottom: 10,
+      height: 60 + insets.bottom,
+      paddingBottom: insets.bottom,
     },
-    //DISEÑO DE CADA BOTÓN 
+    //DISEÑO DE CADA BOTÓN
     tabBarItemStyle: {
       borderWidth: 1, // Grosor del borde de cada tab
       borderColor: "#474747", // Un color gris/azulado sutil para el borde

@@ -32,11 +32,13 @@ export default function FishCard({ especie, onPress }: FishCardProps) {
       {/* Sección Superior: Iconos */}
       <View style={styles.header}>
         <View style={styles.circuloIcono}>
-          <MaterialCommunityIcons name="fish" size={24} color="#006064" />
+          <MaterialCommunityIcons name="fish" size={20} color="#006064" />
         </View>
+
         <Text numberOfLines={1} ellipsizeMode="tail" style={styles.nombreComun}>
           {especie.Común}
         </Text>
+
         <View style={styles.circuloTexto}>
           <Text style={styles.textoBadge}>
             {abreviarOrigen(especie.Origen || "III")}
@@ -64,30 +66,22 @@ export default function FishCard({ especie, onPress }: FishCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
-    width: itemSize, // Ancho fijo basado en la pantalla
-    height: "auto",
-    margin: gap / 2, // Margen pequeño para separar
+    width: itemSize,
+    margin: gap / 2,
     borderRadius: 8,
-    padding: 5,
+    padding: 6,
     borderWidth: 1,
     borderColor: "#b2ebf2",
     alignItems: "center",
-    justifyContent: "space-between",
     elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
   },
   header: {
-    position: "absolute", // Header "flota" sobre la tarjeta
+    position: "absolute",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", // Alineación a los extremos izquierdo y derecho
-    paddingHorizontal: 8, // No padding para que toquen los bordes de la tarjeta
     width: "100%",
+    paddingHorizontal: 2,
     paddingVertical: 3,
-    paddingLeft: 5,
-    paddingRight: 5,
   },
   circuloIcono: {
     width: circleSize,
@@ -98,18 +92,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#006064",
-    marginLeft: 0, // Toca el borde izquierdo de la tarjeta
+    flexShrink: 0, // 👈 evita que se comprima
   },
+
   circuloTexto: {
     height: circleSize,
     borderRadius: circleSize / 2,
-    backgroundColor: "#006064", // Color de fondo según diseño (Introducido)
+    backgroundColor: "#006064",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#006064",
-    marginRight: 0, // Toca el borde derecho de la tarjeta
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
+    flexShrink: 0, // 👈 evita deformación
   },
   textIntroducido: {
     color: "#fff",
@@ -122,12 +117,13 @@ const styles = StyleSheet.create({
     padding: 8, // Margen interno
   },
   nombreComun: {
-    fontSize: 12, // Texto pequeño para que no se desborde
+    flex: 1, // ocupa solo el espacio disponible
+    fontSize: 12,
     fontWeight: "bold",
     color: "#333",
     textAlign: "center",
-    marginBottom: 4,
-    marginHorizontal: 2,
+    marginHorizontal: 5,
+    maxWidth: "55%",
   },
   textoBadge: {
     color: "#fff",
