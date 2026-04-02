@@ -1,14 +1,19 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system/legacy";
+import React, { useEffect, useState } from "react";
 import {
-    Dimensions,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Dimensions,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
 import { Especie } from "../app/colection";
 
 interface FishModalProps {
@@ -42,21 +47,122 @@ export default function FishModal({
   especie,
   onClose,
 }: FishModalProps) {
+  const [misCapturas, setCapturas] = useState<any[]>([]);
+  const [zoom, setZoom] = useState<any | null>(null);
+  const [modalZoom, setModalZoom] = useState(false);
+  useEffect(() => {
+    if (visible && especie) {
+      cargarCapturas();
+    }
+  }, [visible, especie]);
   if (!especie) return null;
 
   //Obtener color segun estado de conservacion
   const colorEstado = getColorEstadoConservacion(especie.Estado);
   // Función auxiliar para renderizar los bloques de captura vacíos
-  const renderPlaceholderCapturas = () => {
-    return [1, 2, 3, 4].map((item) => (
-      <View key={item} style={styles.placeholderCaptura}>
-        <MaterialCommunityIcons
-          name="camera-plus-outline"
-          size={20}
-          color="#b2ebf2"
-        />
+
+  const abrirVisorImagen = (foto: any) => {
+    setZoom(foto);
+    setModalZoom(true);
+  };
+
+  const eliminarFoto = async () => {
+    if (!zoom) {
+      return;
+    }
+    Alert.alert(
+      "Eliminar captura",
+      "¿Estás seguro de eliminar esta foto de la coleccion?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // 1. Eliminar archivo físico
+              const info = await FileSystem.getInfoAsync(zoom.uri);
+
+              if (info.exists) {
+                await FileSystem.deleteAsync(zoom.uri);
+              }
+
+              // 2. Actualizar AsyncStorage
+              const res = await AsyncStorage.getItem("MIS_CAPTURAS");
+
+              if (res) {
+                const todas = JSON.parse(res);
+
+                const filtradas = todas.filter((c: any) => c.id !== zoom.id);
+
+                await AsyncStorage.setItem(
+                  "MIS_CAPTURAS",
+                  JSON.stringify(filtradas),
+                );
+
+                // 3. Refrescar UI
+                setCapturas(
+                  filtradas.filter(
+                    (c: any) => c.cientifico === especie.Científico,
+                  ),
+                );
+
+                setModalZoom(false);
+                setZoom(null);
+
+                Alert.alert("Eliminado", "La captura ha sido borrada.");
+              }
+            } catch (error) {
+              console.error(error);
+              Alert.alert("Error", "No se pudo eliminar el archivo.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const renderSeccionCapturas = () => {
+    // Si no hay capturas, mostramos los placeholders vacíos (como en tu wireframe)
+    if (misCapturas.length === 0) {
+      return [1, 2, 3].map((i) => (
+        <View key={i} style={styles.placeholderCaptura}>
+          <MaterialCommunityIcons name="camera-off" size={20} color="#b2ebf2" />
+        </View>
+      ));
+    }
+    // Si hay capturas, mostramos las fotos del dispositivo
+    return misCapturas.map((item) => (
+      <View key={item.id} style={styles.contenedorFotoReal}>
+        <TouchableOpacity
+          key={item.id}
+          onPress={() => abrirVisorImagen(item)}
+          style={styles.contenedorFotoReal}
+        >
+          <Image
+            source={{ uri: item.uri }}
+            style={styles.fotoReal}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
       </View>
     ));
+  };
+  const cargarCapturas = async () => {
+    try {
+      const res = await AsyncStorage.getItem("MIS_CAPTURAS");
+      if (res) {
+        const all = JSON.parse(res);
+        console.log(all);
+        //FILTRAMOS POR LA ESPECIE DEL MODAL
+        const filtradas = all.filter(
+          (c: any) => c.cientifico === especie.Científico,
+        );
+        setCapturas(filtradas);
+      }
+    } catch (e) {
+      console.error("error capturando:", e);
+    }
   };
 
   return (
@@ -176,7 +282,7 @@ export default function FishModal({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.scrollCapturas}
               >
-                {renderPlaceholderCapturas()}
+                {renderSeccionCapturas()}
               </ScrollView>
 
               {/* Barra de progreso / Paginación del wireframe */}
@@ -198,6 +304,62 @@ export default function FishModal({
             </View>
           </ScrollView>
         </View>
+        {/* MODAL DE VISOR DE IMAGEN (FULLSCREEN) */}
+        <Modal visible={modalZoom} transparent={false} animationType="fade">
+          <View style={styles.visorContainer}>
+            {/* Botón para cerrar */}
+            <TouchableOpacity
+              style={styles.botonCerrarVisor}
+              onPress={() => setModalZoom(false)}
+            >
+              <MaterialCommunityIcons name="close" size={30} color="#fff" />
+            </TouchableOpacity>
+
+            {/* La Imagen en grande */}
+            <View style={styles.contenedorFotoGrande}>
+              {zoom && (
+                <Image
+                  source={{ uri: zoom.uri }}
+                  style={styles.fotoGrande}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+
+            {/* Sección inferior con detalles y botón eliminar */}
+            <View style={styles.pieVisor}>
+              <View style={styles.textosPie}>
+                <Text style={styles.textoPieFecha}>
+                  Capturado el: {zoom?.fecha}
+                </Text>
+                <Text style={styles.textoPieUbicacion}>
+                  <MaterialCommunityIcons
+                    name="map-marker"
+                    size={12}
+                    color="#b2ebf2"
+                  />
+                  Lat: {zoom?.coords?.lat?.toFixed(4)}, Lng:{" "}
+                  {zoom?.coords?.lng?.toFixed(4)}
+                </Text>
+              </View>
+
+              {/* Botón de Eliminar */}
+              <TouchableOpacity
+                style={styles.botonEliminar}
+                onPress={eliminarFoto}
+              >
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={26}
+                  color="#fff"
+                />
+                <Text style={styles.textoBotonEliminar}>
+                  Eliminar de mi bitácora
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -391,5 +553,80 @@ const styles = StyleSheet.create({
   filaEstado: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  contenedorFotoReal: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    marginRight: 10,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#006064",
+  },
+  fotoReal: {
+    width: "100%",
+    height: "100%",
+  },
+  visorContainer: {
+    flex: 1,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  botonCerrarVisor: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: 20,
+    padding: 5,
+  },
+  contenedorFotoGrande: {
+    flex: 1,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fotoGrande: {
+    width: "100%",
+    height: "80%",
+  },
+  pieVisor: {
+    width: "100%",
+    padding: 20,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    alignItems: "center",
+  },
+  textosPie: {
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  textoPieFecha: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  textoPieUbicacion: {
+    color: "#b2ebf2",
+    fontSize: 12,
+    marginTop: 5,
+  },
+  botonEliminar: {
+    backgroundColor: "#D32F2F",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 15,
+    gap: 10,
+    marginBottom: 20,
+  },
+  textoBotonEliminar: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });

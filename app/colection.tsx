@@ -6,6 +6,8 @@ import {
   Text,
   View,
 } from "react-native";
+
+import { SafeAreaView } from "react-native-safe-area-context";
 import fishData from "../assets/data/data.json";
 import FiltroRegion from "../componentes/filtroRegion";
 import FishCard from "../componentes/fishCard";
@@ -50,47 +52,54 @@ export default function AjustesScreen() {
       )
     : listaEspecies;
   return (
-    <View style={styles.container}>
-      <Text style={styles.titulo}>Ventana de colección</Text>
+    <SafeAreaView style={styles.safeContainer}>
+      <View style={styles.container}>
+        <Text style={styles.titulo}>Ventana de colección</Text>
 
-      <FiltroRegion
-        seleccionada={listaSeleccionada}
-        alCambiar={setListaSeleccionada}
-      />
-      {cargando ? (
-        <ActivityIndicator size="large" color="#006064" />
-      ) : (
-        <FlatList
-          data={especiesFiltro}
-          keyExtractor={(item, index) => index.toString()}
-          numColumns={3}
-          renderItem={({ item }) => (
-            <FishCard especie={item} onPress={() => abrirDetalle(item)} />
-          )}
-          contentContainerStyle={{ alignItems: "center", paddingBottom: 20 }}
-          style={{ width: "100%" }}
+        <FiltroRegion
+          seleccionada={listaSeleccionada}
+          alCambiar={setListaSeleccionada}
         />
-      )}
-      <FishModal
-        visible={modalVisible}
-        especie={seleccionado}
-        onClose={() => setModalVisible(false)}
-      />
-    </View>
+        {cargando ? (
+          <ActivityIndicator size="large" color="#006064" />
+        ) : (
+          <FlatList
+            data={especiesFiltro}
+            keyExtractor={(item, index) => index.toString()}
+            numColumns={3}
+            renderItem={({ item }) => (
+              <FishCard especie={item} onPress={() => abrirDetalle(item)} />
+            )}
+            contentContainerStyle={{
+              alignItems: "center",
+              paddingBottom: 10,
+            }}
+            style={{ width: "100%" }}
+          />
+        )}
+        <FishModal
+          visible={modalVisible}
+          especie={seleccionado}
+          onClose={() => setModalVisible(false)}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#e0f7fa",
   },
   titulo: {
     fontSize: 20,
     color: "#006064",
     fontWeight: "bold",
     marginBottom: 10,
+  },
+  safeContainer: {
+    flex: 1,
+    backgroundColor: "#e0f7fa",
   },
 });
