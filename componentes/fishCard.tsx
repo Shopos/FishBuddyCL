@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#006064",
-    flexShrink: 0, // 👈 evita que se comprima
+    flexShrink: 0,
   },
 
   circuloTexto: {
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#006064",
     paddingHorizontal: 6,
-    flexShrink: 0, // 👈 evita deformación
+    flexShrink: 0,
   },
   textIntroducido: {
     color: "#fff",
